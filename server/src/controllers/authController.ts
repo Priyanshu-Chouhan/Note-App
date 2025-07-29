@@ -10,24 +10,28 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function sendOTP(req: Request, res: Response) {
   try {
+    console.log('Send OTP request received:', req.body);
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000);
 
+    console.log(`Generated OTP: ${otp} for email: ${email}`);
+    
     const user = await User.findOneAndUpdate(
       { email },
       { otpCode: otp, otpExpires: expires },
       { upsert: true, new: true }
     );
 
-    console.log(`Sending OTP ${otp} to ${email}`);
+    console.log('User updated in database');
     await sendOTPEmail(email, otp);
+    console.log('OTP email sent successfully');
     res.json({ message: 'OTP sent successfully' });
   } catch (err: any) {
     console.error('Send OTP error:', err);
-    res.status(500).json({ message: err.message || 'Failed to send OTP' });
+    res.status(500).json({ message: 'Failed to send OTP' });
   }
 }
 
